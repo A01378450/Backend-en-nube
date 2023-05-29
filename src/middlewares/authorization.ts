@@ -81,7 +81,7 @@ class AuthMiddleware {
 			});
 			console.log(Object.keys(pems));
 		} catch (error) {
-			console.log('Auth Middleware getAWSCognitoPems() error', error);
+			console.log('Auth Middleware getAWSCognitoPerms() error', error);
 		}
 	}
 }

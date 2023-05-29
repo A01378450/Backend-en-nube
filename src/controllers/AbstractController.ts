@@ -2,7 +2,6 @@ import {Router} from 'express';
 
 //Middlewares
 import AuthMiddleware from '../middlewares/authorization';
-import PermissionMiddleware from '../middlewares/permission';
 import ValidationErrorMiddleware from '../middlewares/validationError';
 
 //Servicios
@@ -14,7 +13,6 @@ export default abstract class AbstractController{
 
     protected handleErrors = ValidationErrorMiddleware.handleErrors;
     protected authMiddleware = AuthMiddleware.getInstance();
-    protected permissionMiddleware = PermissionMiddleware.getInstance();
     protected cognitoService = CognitoService.getInstance();
 
     public get prefix():string{

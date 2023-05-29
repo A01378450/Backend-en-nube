@@ -1,7 +1,6 @@
 import express,{Request, Response} from 'express';
 import AbstractController from '../controllers/AbstractController';
-import db from '../models';
-
+// import db from '../modelsNOSQL/userNOSQL';
 
 class Server{
     private app:express.Application;
@@ -30,11 +29,11 @@ class Server{
     }
 
     private async connectDB(){
-        await db.sequelize.sync({force:false})
+        // await db.sequelize.sync({force:false})
     }
 
     public async init(){
-        await this.connectDB();
+        // await this.connectDB();
         this.app.listen(this.port,()=>{
             console.log(`Server::Running 🚀 😱 @'http://localhost:${this.port}'`);
         })

@@ -3,6 +3,7 @@ import express from "express";
 import cors from 'cors';
 import UserController from "./controllers/UserController";
 import AuthenticationController from "./controllers/AuthenticationController";
+import AccountController from "./controllers/AccountController";
 
 const app = new Server({
     port:8080,
@@ -13,7 +14,8 @@ const app = new Server({
     ],
     controllers:[
         UserController.getInstance(),
-        AuthenticationController.getInstance()
+        AuthenticationController.getInstance(),
+        AccountController.getInstance()
     ],
     env:'development'
 });
