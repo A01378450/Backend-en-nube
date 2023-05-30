@@ -80,9 +80,9 @@ class AccountController extends AbstractController {
   }
 
   private saldo(req: Request, res: Response) {
-    const { useraccount } = req.body;
+    const { email } = req.body;
 
-    UserModel.get(useraccount, (err, user) => {
+    UserModel.get(email, (err, user) => {
       if (err) {
         console.error("Error:", err);
         return res
