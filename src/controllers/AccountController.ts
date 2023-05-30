@@ -20,18 +20,10 @@ class AccountController extends AbstractController {
   }
 
   protected initRoutes(): void {
-    this.router.post("/deposito", this.deposito.bind(this));
-    this.router.post("/retiro", this.retiro.bind(this));
-    this.router.get(
-      "/saldo",
-      this.authMiddleware.verifyToken,
-      this.saldo.bind(this)
-    ); //Teniamos post no get en el metodo
-    this.router.get(
-      "/test",
-      this.authMiddleware.verifyToken,
-      this.test.bind(this)
-    );
+    this.router.post("/deposito",this.authMiddleware.verifyToken, this.deposito.bind(this));
+    this.router.post("/retiro",this.authMiddleware.verifyToken, this.retiro.bind(this));
+    this.router.get("/saldo",this.authMiddleware.verifyToken, this.saldo.bind(this));
+    this.router.get("/test", this.authMiddleware.verifyToken, this.test.bind(this));
   }
 
   private async test(req: Request, res: Response) {
@@ -39,83 +31,97 @@ class AccountController extends AbstractController {
   }
 
   private async deposito(req: Request, res: Response) {
-    const { email, amount } = req.body;
-    const useraccount = email;
+    const { amount } = req.body;
 
-    try {
-      UserModel.update(
-        {
-          useraccount,
-          balance: {
-            $add: amount,
-          },
-        },
-        (err, acc) => {
-          if (err) {
-            res.status(500).send({ message: "Error", error: err.message });
-          } else {
-            const newBalance = acc.attrs.balance;
-            res
-              .status(200)
-              .send({ message: "Depósito exitoso", saldo: newBalance });
-          }
-        }
-      );
-    } catch (error: any) {
-      res
-        .status(500)
-        .send({ message: "Error", error: error.message || "Unknown error" });
-    }
-  }
-
-  private async retiro(req: Request, res: Response) {
-    const { email, amount } = req.body;
-
-    if (!email || !amount) {
-      return res.status(400).send({ message: "Faltan parámetros" });
-    }
-
-    const saldo = amount > 0 ? -amount : amount;
-
-    const useraccount = email;
-
-    try {
-      const user: any = await UserModel.get(useraccount);
-      if (user) {
-        const currentBalance = user.get("balance");
-        if (currentBalance + amount < 0) {
-          return res.status(400).send({ message: "Saldo insuficiente" });
-        }
-        user.set("balance", currentBalance + saldo);
-        await user.save();
-        res
-          .status(200)
-          .send({ message: "Retiro exitoso", saldo: user.get("balance") });
-      } else {
-        res.status(404).send({ message: "Usuario no encontrado" });
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(500).send({ message: "Error", error: error.message });
-      } else {
-        res.status(500).send({ message: "Error", error: "Unknown error" });
-      }
-    }
-  }
-
-  private saldo(req: Request, res: Response) {
-    const { email } = req.body;
-
-    UserModel.get(email, (err, user) => {
+    UserModel.get(req.id, (err, data) => {
+      const userId = req.id
       if (err) {
         console.error("Error:", err);
         return res
           .status(500)
           .json({ message: "Error", error: err.message || "Unknown error" });
       }
+      if (data) {
+        const name = data.attrs.name;
+        const newBalance = data.attrs.balance + amount;
+        const email = data.attrs.email;
+        UserModel.update(
+          {
+            awsCognitoId: userId,
+            name: name,
+            balance: newBalance,
+            email: email
+          }, (err, data) => {
+            if (err) {
+              console.error("Error:", err);
+              return res
+                .status(500)
+                .json({ message: "Error", error: err.message || "Unknown error" });
+            }
+          })
+        console.log("Balance: %f", newBalance);
+        return res.status(200).json({ message: "Deposito", amount });
+      } else {
+        return res.status(404).json({ message: "Usuario no encontrado" });
+      }
+    });
+  }
 
-      if (user && user.attrs && user.attrs.balance) {
-        const balance = user.attrs.balance;
+  private async retiro(req: Request, res: Response) {
+    const { amount } = req.body;
+
+    UserModel.get(req.id, (err, data) => {
+      const userId = req.id
+      if (err) {
+        console.error("Error:", err);
+        return res
+          .status(500)
+          .json({ message: "Error", error: err.message || "Unknown error" });
+      }
+      if(amount < data.attrs.balance){
+        if (data) {
+          const name = data.attrs.name;
+          const newBalance = data.attrs.balance - amount;
+          const email = data.attrs.email;
+          UserModel.update(
+            {
+              awsCognitoId: userId,
+              name: name,
+              balance: newBalance,
+              email: email
+            }, (err, data) => {
+              if (err) {
+                console.error("Error:", err);
+                return res
+                  .status(500)
+                  .json({ message: "Error", error: err.message || "Unknown error" });
+              }
+            })
+          console.log("Balance: %f", newBalance);
+          return res.status(200).json({ message: "Retiro", amount });
+        } else {
+          return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+      }
+      else{
+        console.log("No cuenta con el saldo suficiente")
+        return res.status(404).json({ message: "Saldo insuficiente" });
+      }
+    });
+  }
+
+  private saldo(req: Request, res: Response) {
+    UserModel.get(req.id, (err, data) => {
+      const userId = req.id
+      if (err) {
+        console.error("Error:", err);
+        return res
+          .status(500)
+          .json({ message: "Error", error: err.message || "Unknown error" });
+      }
+      if (userId) {
+        const balance = data.attrs.balance;
+        console.log("Balance: %f", balance);
         return res.status(200).json({ message: "Bienvenido", balance });
       } else {
         return res.status(404).json({ message: "Usuario no encontrado" });

@@ -28,10 +28,12 @@ UserModel.get('awsCognitoId', function(err, user) {
         console.log('User data: ', user);
     }
 });
-// /dynamodb.createTables((err:any)=>{
-// 	if(err)
-// 		return console.log('Error al crear la tabla',err);
-// 	console.log('Tabla creada exitosamente');
-// })
+/*
+dynamodb.createTables((err:any)=>{
+ 	if(err)
+ 		return console.log('Error al crear la tabla',err);
+ 	console.log('Tabla creada exitosamente');
+ })
 
+*/
 export default UserModel;

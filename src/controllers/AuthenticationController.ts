@@ -34,9 +34,9 @@ class AuthenticationController extends AbstractController{
         const {email,password} = req.body;
         console.log(req.body)
         try{
-            // const login = await this.cognitoService.signInUser(email,password);
+            const login = await this.cognitoService.signInUser(email,password);
             
-            // res.status(200).send({...login.AuthenticationResult});
+            res.status(200).send({...login.AuthenticationResult});
         }catch(error:any){
             res.status(500).send({code:error.code,message:error.message}).end()
         }

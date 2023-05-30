@@ -23,7 +23,7 @@ const app = new Server({
 declare global{
     namespace Express{
         interface Request{
-            user:string;
+            id:string;
             token:string;
         }
     }
