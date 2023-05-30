@@ -22,7 +22,7 @@ class AccountController extends AbstractController{
     protected initRoutes(): void {
         this.router.post('/deposito', this.deposito.bind(this));
         this.router.post('/retiro',this.retiro.bind(this));
-        this.router.post('/saldo',this.saldo.bind(this));
+        this.router.get('/saldo',this.authMiddleware.verifyToken, this.saldo.bind(this)); //Teniamos post no get en el metodo
         this.router.get('/test',this.authMiddleware.verifyToken,this.test.bind(this));
     }
 
@@ -31,38 +31,30 @@ class AccountController extends AbstractController{
     }
 
     private async deposito(req:Request,res:Response){
-        const {email, ammount} = req.body;
+        const {useraccount, ammount} = req.body;
         // sumarle a balance en base de datos ammount
+        const awsCognitoId = useraccount; //Cambiar constante y verificar cognito
         try{
-            //const user = await UserModel.get(email, '', {
-            //    AttributesToGet: ['EmailIndex']
-            //        });
-            //UserModel.get(email, {ConsistentRead: true}, function (err, acc) {
-                //console.log('got account', acc.get('email'));
-                console.log(email)
-            const a= UserModel.scan().loadAll()
-            //.where('email').equals(email)
-            .exec();
-            console.log(a)
-            
-            return res.status(200).send('Deposito Hecho')
-
-            //const oldBalance = UserModel.get(balance, {ConsistentRead: true}, function (err, acc) {
-                //console.log('got balance', acc.get('balance'));
-            //});
-            
-            //const newBalance = oldBalance + ammount;
-
-            //UserModel.update({email: {userEmail}, Balance: {newBalance}},function (err, acc) {
-                //console.log('update balance', acc.get('balance')); // prints the old account name
-            //});
-
-            
-            //return res.status(200).send('Deposito Hecho')
-        }catch(error:any){
-            res.status(500).send({code:error.code,message:error.message}).end();
+            UserModel.update({
+                awsCognitoId,
+                balance: {
+                    $add: ammount
+                }
+            }, (err, acc) => {
+                if (err) {
+                    res.status(500).send({message: "Error", error: err.message});
+                } else {
+                    res.status(200).send({ message: "Deposito exitoso", saldo: acc.get('balance')});
+                }
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                res.status(500).send({ message: "Error", error: error.message });
+            } else {
+                res.status(500).send({ message: "Error", error: "Unknown error" });
+            }
         }
-    }
+      }
 
     private async retiro(req:Request,res:Response){
         const{email,ammount} = req.body;
@@ -75,13 +67,24 @@ class AccountController extends AbstractController{
         //res.status(500).send({code:error.code,message:error.message})
     }
 
-    private async saldo(req:Request,res:Response){
-        const {email} = req.body;
-        // consulta a base de datos y regresar balance
-        //res.status(200).send('Saldo consultado')
-        //res.status(200).send({message:"Saldo consultado"})
+    private async saldo(req: Request, res: Response) {
+        const {useraccount} = req.body;
+        try {
+            const user: any = await UserModel.get(useraccount)
+          if (user) {
+            const balance = user.get('balance');
+            res.status(200).send({message:"Bienvenido",  balance });
+          } else {
+            res.status(404).json({ message: "Usuario no encontrado" });
+          }
+        } catch (error) {
+          if (error instanceof Error) {
+            res.status(500).json({ message: "Error", error: error.message });
+          } else {
+            res.status(500).json({ message: "Error", error: "Unknown error" });
+          }
+        }
     }
-
 }
 
 
