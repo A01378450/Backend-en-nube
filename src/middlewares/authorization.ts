@@ -42,7 +42,7 @@ class AuthMiddleware {
 						return res.status(401).send({ code: 'InvalidTokenException', message: 'The token is no valid' });
 					}					
 				});
-				req.user = decodedJWT.payload.username;
+				req.id = decodedJWT.payload.username;
 				req.token = token;				
 				next();
 			}else{
