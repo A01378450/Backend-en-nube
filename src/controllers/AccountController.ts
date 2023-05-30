@@ -39,7 +39,7 @@ class AccountController extends AbstractController {
   }
 
   private async deposito(req: Request, res: Response) {
-    const { email, ammount } = req.body;
+    const { email, amount } = req.body;
     const useraccount = email;
 
     try {
@@ -47,7 +47,7 @@ class AccountController extends AbstractController {
         {
           useraccount,
           balance: {
-            $add: ammount,
+            $add: amount,
           },
         },
         (err, acc) => {
@@ -69,14 +69,38 @@ class AccountController extends AbstractController {
   }
 
   private async retiro(req: Request, res: Response) {
-    const { email, ammount } = req.body;
-    // checar balance,
-    // si balance > ammount -> restarle ammount a balance -> mensaje de exito
-    // si no -> mensaje de error
-    //res.status(200).send('Retiro Hecho')
-    //res.status(200).send({message:"Retiro Hecho"})
+    const { email, amount } = req.body;
 
-    //res.status(500).send({code:error.code,message:error.message})
+    if (!email || !amount) {
+      return res.status(400).send({ message: "Faltan parámetros" });
+    }
+
+    const saldo = amount > 0 ? -amount : amount;
+
+    const useraccount = email;
+
+    try {
+      const user: any = await UserModel.get(useraccount);
+      if (user) {
+        const currentBalance = user.get("balance");
+        if (currentBalance + amount < 0) {
+          return res.status(400).send({ message: "Saldo insuficiente" });
+        }
+        user.set("balance", currentBalance + saldo);
+        await user.save();
+        res
+          .status(200)
+          .send({ message: "Retiro exitoso", saldo: user.get("balance") });
+      } else {
+        res.status(404).send({ message: "Usuario no encontrado" });
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(500).send({ message: "Error", error: error.message });
+      } else {
+        res.status(500).send({ message: "Error", error: "Unknown error" });
+      }
+    }
   }
 
   private saldo(req: Request, res: Response) {
